@@ -8,13 +8,30 @@
         <input type="text" ng-model="view.establishments.name" ng-keyup='enterKeyEstablishmentForm($event)'><br>
         
         <div ng-if="view.establishments.tooMuchResults || view.establishments.resultsTable.length>view.maxResultsToShow">
-            <p ng-if="view.establishments.tooMuchResults">
-                {{view.establishments.resultsBeforeFiltering}} établissements ont été trouvés. Veuillez entrer le numéro de département dans lequel votre établissement a été enregistré afin de réduire le nombre de résultat.
-            </p>
+            
+            <div ng-if="view.establishments.tooMuchResults">
 
-            <p ng-if="view.establishments.resultsTable.length>view.maxResultsToShow">
-                {{view.establishments.resultsTable.length}} établissements ont été trouvés et préfiltrés. Veuillez entrer le numéro de département dans lequel votre établissement a été enregistré afin de réduire le nombre de résultat.
-            </p>
+                <p ng-if="!view.establishments.previousSearchedDepartment"> 
+                    {{view.establishments.resultsBeforeFiltering}} établissements ont été trouvés. Veuillez entrer le numéro de département dans lequel votre établissement a été enregistré afin de réduire le nombre de résultats. 
+                </p>
+
+                <p ng-if="view.establishments.previousSearchedDepartment">
+                    {{view.establishments.resultsBeforeFiltering}} établissements ont été trouvés. Veuillez affiner votre recherche en indiquant un nom d'établissement plus précis.
+                </p>
+            </div>                  
+        
+            <div ng-if="view.establishments.resultsTable.length>view.maxResultsToShow">
+
+                    <p ng-if="!view.establishments.previousSearchedDepartment"> 
+                        {{view.establishments.resultsTable.length}} établissements ont été trouvés et préfiltrés. Veuillez entrer le numéro de département dans lequel votre établissement a été enregistré afin de réduire le nombre de résultats. 
+                    </p>
+
+                    <p ng-if="view.establishments.previousSearchedDepartment">
+                        {{view.establishments.resultsTable.length}} établissements ont été trouvés et préfiltrés. Veuillez affiner votre recherche en indiquant un nom d'établissement plus précis.
+                    </p>                    
+                
+            </div>
+
 
             Département :
             <input type="text"  ng-model="view.establishments.department" ng-keyup='enterKeyEstablishmentForm($event)'><br>
