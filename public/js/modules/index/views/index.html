@@ -1,47 +1,52 @@
-<div class="index">
+<div class="index container">
 
-    <div class="form">
+    <!-- Inputs for the establishments's information -->
+    <h1>Recherche d'établissement</h1>
 
-        <!-- Inputs for the establishments's information -->
-        <h1>Informations de l'établissement</h1>
-        Nom :
-        <input type="text" ng-model="view.establishments.name" ng-keyup='enterKeyEstablishmentForm($event)'><br>
+    <div class="row">
+        <div class="col">
+            <div class="form-group jumbotron">
+                <label>Nom de l'établissement :</label>
+                <input type="text" class="form-control" ng-model="view.establishments.name" ng-keyup='enterKeyEstablishmentForm($event)'><br>
         
-        <div ng-if="view.establishments.tooMuchResults || view.establishments.resultsTable.length>view.maxResultsToShow">
+                <div ng-if="view.establishments.tooMuchResults || view.establishments.resultsTable.length>view.maxResultsToShow">
             
-            <div ng-if="view.establishments.tooMuchResults">
+                    <div ng-if="view.establishments.tooMuchResults">
 
-                <p ng-if="!view.establishments.previousSearchedDepartment"> 
-                    {{view.establishments.resultsBeforeFiltering}} établissements ont été trouvés. Veuillez entrer le numéro de département dans lequel votre établissement a été enregistré afin de réduire le nombre de résultats. 
-                </p>
+                        <p ng-if="!view.establishments.previousSearchedDepartment"> 
+                            {{view.establishments.resultsBeforeFiltering}} établissements ont été trouvés. Veuillez entrer le numéro de département dans lequel votre établissement a été enregistré afin de réduire le nombre de résultats. 
+                        </p>
 
-                <p ng-if="view.establishments.previousSearchedDepartment">
-                    {{view.establishments.resultsBeforeFiltering}} établissements ont été trouvés. Veuillez affiner votre recherche en indiquant un nom d'établissement plus précis.
-                </p>
-            </div>                  
-        
-            <div ng-if="view.establishments.resultsTable.length>view.maxResultsToShow">
+                        <p ng-if="view.establishments.previousSearchedDepartment">
+                            {{view.establishments.resultsBeforeFiltering}} établissements ont été trouvés. Veuillez affiner votre recherche en indiquant un nom d'établissement plus précis.
+                        </p>
 
-                    <p ng-if="!view.establishments.previousSearchedDepartment"> 
-                        {{view.establishments.resultsTable.length}} établissements ont été trouvés et préfiltrés. Veuillez entrer le numéro de département dans lequel votre établissement a été enregistré afin de réduire le nombre de résultats. 
-                    </p>
-
-                    <p ng-if="view.establishments.previousSearchedDepartment">
-                        {{view.establishments.resultsTable.length}} établissements ont été trouvés et préfiltrés. Veuillez affiner votre recherche en indiquant un nom d'établissement plus précis.
-                    </p>                    
+                    </div>                  
                 
+                    <div ng-if="view.establishments.resultsTable.length>view.maxResultsToShow">
+
+                        <p ng-if="!view.establishments.previousSearchedDepartment"> 
+                            {{view.establishments.resultsTable.length}} établissements ont été trouvés et préfiltrés. Veuillez entrer le numéro de département dans lequel votre établissement a été enregistré afin de réduire le nombre de résultats. 
+                        </p>
+
+                        <p ng-if="view.establishments.previousSearchedDepartment">
+                            {{view.establishments.resultsTable.length}} établissements ont été trouvés et préfiltrés. Veuillez affiner votre recherche en indiquant un nom d'établissement plus précis.
+                        </p>                    
+                        
+                    </div>
+
+                    <label>Département :</label>
+                    <input type="text" class="form-control" ng-model="view.establishments.department" ng-keyup='enterKeyEstablishmentForm($event)'><br>
+
+                </div> 
+
+                <button class="btn btn-primary" ng-click="establishmentsSearch()">Rechercher</button>
+                    
+                <!-- errors messages -->
+                <div class="alert alert-danger" role="alert" ng-if="view.errorMsg">
+                    Erreur : {{view.errorMsg}}
+                </div>
             </div>
-
-
-            Département :
-            <input type="text"  ng-model="view.establishments.department" ng-keyup='enterKeyEstablishmentForm($event)'><br>
-        </div> 
-
-        <button ng-click="establishmentsSearch()" >Submit</button>
-            
-        <!-- errors messages -->
-        <div class="errorMessage" ng-if="view.errorMsg">
-            Erreur : {{view.errorMsg}}
         </div>
     </div>
 
@@ -50,48 +55,63 @@
     <!-- RESULTS SECTION -->
     <div class="results">
         <div class="establishments_results">
+
             <div ng-if="view.establishments.searchSuccess  && !view.establishments.resultsTable.length && !view.establishments.tooMuchResults && !view.errorMsg">
-                <p>Il n'y a aucun établissements correspondant </p>
+                <p>
+                    Il n'y a aucun établissements correspondant
+                </p>
             </div>
 
             <div ng-if="view.establishments.searchSuccess  && view.maxResultsToShow >= view.establishments.resultsTable.length &&view.establishments.resultsTable.length ">
-                <p> {{view.establishments.resultsTable.length}} établissements avec des informations correspondantes ont été trouvés :</p>  
+                <h2>Résultats</h2>
+                <p> 
+                    {{view.establishments.resultsTable.length}} établissements avec des informations correspondantes ont été trouvés :
+                </p>  
 
                 <!-- Companies's results table -->      
-                <div class="establishments-infos" ng-repeat="establishment in view.establishments.resultsTable">
-                    <span class="info"><span class="label-title">Nom : </span>{{establishment.name1}}</span>
-                    <span class="info" ng-if="establishment.name2"><span class="label-title">Deuxième Nom : </span>{{establishment.name2}}</span>
-                    <span class="info" ng-if="establishment.social_reason"><span class="label-title">Raison sociale  : </span>{{establishment.social_reason}}</span>
-                    <span class="info"></span><span class="label-title">Adresse : </span> {{establishment.address}}</span>
-                    <br>
-                    <br>
-                    <span class="info"><span class="label-title">Ville : </span> {{establishment.city}}</span>
-                    <span class="info"><span class="label-title">departement : </span>{{establishment.department}}</span>
-                    <span class="info"><span class="label-title">Code postal : </span>{{establishment.postal_code}}</span>
-                    <br>
-                    <br>
-                    <span class="info" ng-if="establishment.siren"><span class="label-title">siren : </span>{{establishment.siren}}</span>
-                    <span class="info" ng-if="establishment.siret"><span class="label-title">siret : </span>{{establishment.siret}}</span>
-                    <span class="info" ng-if="establishment.legal_form"><span class="label-title">Forme juridique : </span>{{establishment.legal_form}}</span>
-                    <span class="info" ng-if="establishment.naf"><span class="label-title">Code NAF : </span>{{establishment.naf}}</span>
-                    <span class="info" ng-if="establishment.nafa"><span class="label-title">Code NAFA : </span>{{establishment.nafa}}</span>
-                    <span class="info" ng-if="establishment.rcs"><span class="label-title">Code RCS : </span>{{establishment.rcs}}</span>
-                    <span class="info" ng-if="establishment.rm"><span class="label-title">Code RM : </span>{{establishment.rm}}</span> 
-                    <span class="info" ng-if="establishment.rna"><span class="label-title">Code RNA : </span>{{establishment.rna}}</span>
-                    <span class="info" ng-if="establishment.creation_date"><span class="label-title">date de Création : </span>{{establishment.creation_date}}</span>
-                    <br>
-                    <span class="info" ng-if="establishment.email"><span class="label-title">date de Création : </span>{{establishment.email}}</span>
-                    <span class="info" ng-if="establishment.phone"><span class="label-title">Téléphone : </span>{{establishment.phone}}</span>
-                    <span class="info" ng-if="establishment.website"><span class="label-title" >site web : </span>{{establishment.website}}</span>                                       
+                <div class="jumbotron results" ng-repeat="establishment in view.establishments.resultsTable">
+                    <div class="row">
+                        <div class="col">
+                            <span class="info"><label>Nom :</label>{{establishment.name1}}</span>
+                            <span class="info" ng-if="establishment.name2"><label>Deuxième Nom :</label>{{establishment.name2}}</span>
+                            <span class="info" ng-if="establishment.social_reason"><label>Raison sociale :</label>{{establishment.social_reason}}</span>
+                        </div>
+                        <div class="col">
+                            <span class="info"></span><label>Adresse :</label>{{establishment.address}}</span>
+                            <span class="info"><label>Ville :</label>{{establishment.city}}</span>
+                            <span class="info"><label>Département :</label>{{establishment.department}}</span>
+                            <span class="info"><label>Code postal :</label>{{establishment.postal_code}}</span>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row">
+                        <div class="col">
+                            <span class="info" ng-if="establishment.legal_form"><label>Forme juridique :</label>{{establishment.legal_form}}</span>
+                            <span class="info" ng-if="establishment.siren"><label>SIREN :</label>{{establishment.siren}}</span>
+                            <span class="info" ng-if="establishment.siret"><label>SIRET :</label>{{establishment.siret}}</span>
+                            <span class="info" ng-if="establishment.naf"><label>Code NAF :</label>{{establishment.naf}}</span>
+                            <span class="info" ng-if="establishment.nafa"><label>Code NAFA :</label>{{establishment.nafa}}</span>
+                            <span class="info" ng-if="establishment.rcs"><label>Code RCS :</label>{{establishment.rcs}}</span>
+                            <span class="info" ng-if="establishment.rm"><label>Code RM :</label>{{establishment.rm}}</span> 
+                            <span class="info" ng-if="establishment.rna"><label>Code RNA :</label>{{establishment.rna}}</span>
+                        </div>
+                        <div class="col">                            
+                            <span class="info" ng-if="establishment.creation_date"><label>Date de Création :</label>{{establishment.creation_date}}</span>
+                            <span class="info" ng-if="establishment.email"><label>Email :</label>{{establishment.email}}</span>
+                            <span class="info" ng-if="establishment.phone"><label>Téléphone :</label>{{establishment.phone}}</span>
+                            <span class="info" ng-if="establishment.website"><label>Site web :</label>{{establishment.website}}</span>
+                        </div>
+                    </div>                                       
                 </div>
 
-            <!-- this code is to make easier the debugging of mixUpResults -->
-            <!-- <div class="establishments-infos" ng-repeat="establishment in view.establishments.resultsTable track by $index">
-                <div ng-repeat="(key, val) in establishment">
-                    <span class="info" ng-if="val"><span class="label-title">{{key}} : </span>{{val}}</span>
-                </div>
-            </div> -->
-        </div>
+                <!-- this code is to make easier the debugging of mixUpResults -->
+                <!-- <div class="establishments-infos" ng-repeat="establishment in view.establishments.resultsTable track by $index">
+                    <div ng-repeat="(key, val) in establishment">
+                        <span class="info" ng-if="val"><span class="label-title">{{key}} : </span>{{val}}</span>
+                    </div>
+                </div> -->
+            </div>
   
-</div>
+        </div>
+
 

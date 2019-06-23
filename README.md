@@ -14,8 +14,8 @@ Si il y a plus de `MAX_RESULTS_TO_SHOW` on demande le département à l'utilisat
 
 Dans le cas où, les appel d'API renverrait trop de résultats `MAX_RESULTS_TO_COMPUTE` (500) nous indiquons à l'utilisateur que sa recherche engendre trop de résultat pour les afficher.
 
-# demo
-[Demo](https://intia.github.io/searchFrenchSIRET)
+# Démonstration
+[Démonstration](https://intia.github.io/searchFrenchSIRET)
 
 
 # Comment démarrer
