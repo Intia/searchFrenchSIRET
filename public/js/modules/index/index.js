@@ -1,24 +1,21 @@
-var home = angular.module('home', [
-    'ngRoute',
-    'api.establishment',
-    'api.sirene',
-    'api.rna',
-    'api.asyncCalls',
-    'api.string',
-    'api.establishmentsFiltering'
+const home = angular.module('home', [
+  'ngRoute',
+  'intia.services.establishment',
+  'intia.services.sirene',
+  'intia.services.rna',
+  'intia.services.asyncCalls',
+  'intia.services.string',
 ])
 
-    .config(['$routeProvider',
-        function ($routeProvider)
-        {
-            'use strict';
-            $routeProvider.
-                when('/', {
-                    templateUrl: 'js/modules/index/views/index.html',
-                    controller: 'IndexCtrl'
-                }).
-                otherwise({
-                    redirectTo: '/'
-                });
-        }
-    ]);
+  .config(['$routeProvider',
+    ($routeProvider) => {
+      $routeProvider
+        .when('/', {
+          templateUrl: 'js/modules/index/views/index.html',
+          controller: 'IndexCtrl',
+        })
+        .otherwise({
+          redirectTo: '/',
+        });
+    },
+  ]);

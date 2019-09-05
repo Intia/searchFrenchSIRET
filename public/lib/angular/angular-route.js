@@ -3,9 +3,10 @@
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
-(function(window, angular, undefined) {'use strict';
+(function (window, angular, undefined) {
+ 
 
-/**
+  /**
  * @ngdoc module
  * @name ngRoute
  * @description
@@ -20,12 +21,12 @@
  *
  * <div doc-module-components="ngRoute"></div>
  */
- /* global -ngRouteModule */
-var ngRouteModule = angular.module('ngRoute', ['ng']).
-                        provider('$route', $RouteProvider),
-    $routeMinErr = angular.$$minErr('ngRoute');
+  /* global -ngRouteModule */
+  let ngRouteModule = angular.module('ngRoute', ['ng'])
+                        .provider('$route', $RouteProvider);
+    var $routeMinErr = angular.$$minErr('ngRoute');
 
-/**
+  /**
  * @ngdoc provider
  * @name $routeProvider
  *
@@ -39,14 +40,14 @@ var ngRouteModule = angular.module('ngRoute', ['ng']).
  * ## Dependencies
  * Requires the {@link ngRoute `ngRoute`} module to be installed.
  */
-function $RouteProvider() {
-  function inherit(parent, extra) {
-    return angular.extend(Object.create(parent), extra);
-  }
+  function $RouteProvider() {
+    function inherit(parent, extra) {
+      return angular.extend(Object.create(parent), extra);
+    }
 
-  var routes = {};
+    let routes = {};
 
-  /**
+    /**
    * @ngdoc method
    * @name $routeProvider#when
    *
@@ -145,36 +146,36 @@ function $RouteProvider() {
    * @description
    * Adds a new route definition to the `$route` service.
    */
-  this.when = function(path, route) {
-    //copy original route object to preserve params inherited from proto chain
-    var routeCopy = angular.copy(route);
-    if (angular.isUndefined(routeCopy.reloadOnSearch)) {
-      routeCopy.reloadOnSearch = true;
-    }
-    if (angular.isUndefined(routeCopy.caseInsensitiveMatch)) {
-      routeCopy.caseInsensitiveMatch = this.caseInsensitiveMatch;
-    }
-    routes[path] = angular.extend(
-      routeCopy,
-      path && pathRegExp(path, routeCopy)
-    );
-
-    // create redirection for trailing slashes
-    if (path) {
-      var redirectPath = (path[path.length - 1] == '/')
-            ? path.substr(0, path.length - 1)
-            : path + '/';
-
-      routes[redirectPath] = angular.extend(
-        {redirectTo: path},
-        pathRegExp(redirectPath, routeCopy)
+    this.when = function (path, route) {
+    // copy original route object to preserve params inherited from proto chain
+      let routeCopy = angular.copy(route);
+      if (angular.isUndefined(routeCopy.reloadOnSearch)) {
+        routeCopy.reloadOnSearch = true;
+      }
+      if (angular.isUndefined(routeCopy.caseInsensitiveMatch)) {
+        routeCopy.caseInsensitiveMatch = this.caseInsensitiveMatch;
+      }
+      routes[path] = angular.extend(
+        routeCopy,
+        path && pathRegExp(path, routeCopy),
       );
-    }
 
-    return this;
-  };
+      // create redirection for trailing slashes
+      if (path) {
+        let redirectPath = (path[path.length - 1] == '/')
+          ? path.substr(0, path.length - 1)
+          : `${path  }/`;
 
-  /**
+        routes[redirectPath] = angular.extend(
+          { redirectTo: path },
+          pathRegExp(redirectPath, routeCopy),
+        );
+      }
+
+      return this;
+    };
+
+    /**
    * @ngdoc property
    * @name $routeProvider#caseInsensitiveMatch
    * @description
@@ -183,9 +184,9 @@ function $RouteProvider() {
    * using this provider should be matched using a case insensitive
    * algorithm. Defaults to `false`.
    */
-  this.caseInsensitiveMatch = false;
+    this.caseInsensitiveMatch = false;
 
-   /**
+    /**
     * @param path {string} path
     * @param opts {Object} options
     * @return {?Object}
@@ -196,17 +197,17 @@ function $RouteProvider() {
     *
     * Inspired by pathRexp in visionmedia/express/lib/utils.js.
     */
-  function pathRegExp(path, opts) {
-    var insensitive = opts.caseInsensitiveMatch,
-        ret = {
+    function pathRegExp(path, opts) {
+      let insensitive = opts.caseInsensitiveMatch;
+        var ret = {
           originalPath: path,
           regexp: path
-        },
-        keys = ret.keys = [];
+        };
+        var keys = ret.keys = [];
 
-    path = path
-      .replace(/([().])/g, '\\$1')
-      .replace(/(\/)?:(\w+)([\?\*])?/g, function(_, slash, key, option) {
+      path = path
+        .replace(/([().])/g, '\\$1')
+        .replace(/(\/)?:(\w+)([\?\*])?/g, (_, slash, key, option) => {
         var optional = option === '?' ? option : null;
         var star = option === '*' ? option : null;
         keys.push({ name: key, optional: !!optional });
@@ -220,13 +221,13 @@ function $RouteProvider() {
           + ')'
           + (optional || '');
       })
-      .replace(/([\/$\*])/g, '\\$1');
+        .replace(/([\/$\*])/g, '\\$1');
 
-    ret.regexp = new RegExp('^' + path + '$', insensitive ? 'i' : '');
-    return ret;
-  }
+      ret.regexp = new RegExp(`^${  path  }$`, insensitive ? 'i' : '');
+      return ret;
+    }
 
-  /**
+    /**
    * @ngdoc method
    * @name $routeProvider#otherwise
    *
@@ -238,25 +239,24 @@ function $RouteProvider() {
    * If called with a string, the value maps to `redirectTo`.
    * @returns {Object} self
    */
-  this.otherwise = function(params) {
-    if (typeof params === 'string') {
-      params = {redirectTo: params};
-    }
-    this.when(null, params);
-    return this;
-  };
+    this.otherwise = function (params) {
+      if (typeof params === 'string') {
+        params = { redirectTo: params };
+      }
+      this.when(null, params);
+      return this;
+    };
 
 
-  this.$get = ['$rootScope',
-               '$location',
-               '$routeParams',
-               '$q',
-               '$injector',
-               '$templateRequest',
-               '$sce',
-      function($rootScope, $location, $routeParams, $q, $injector, $templateRequest, $sce) {
-
-    /**
+    this.$get = ['$rootScope',
+      '$location',
+      '$routeParams',
+      '$q',
+      '$injector',
+      '$templateRequest',
+      '$sce',
+      function ($rootScope, $location, $routeParams, $q, $injector, $templateRequest, $sce) {
+        /**
      * @ngdoc service
      * @name $route
      * @requires $location
@@ -281,7 +281,7 @@ function $RouteProvider() {
      *
      * Requires the {@link ngRoute `ngRoute`} module to be installed.
      *
-     * You can define routes through {@link ngRoute.$routeProvider $routeProvider}'s API.
+     * You can define routes through {@link ngRoute.$routeProvider $routeProvider}'s intia.services.
      *
      * The `$route` service is typically used in conjunction with the
      * {@link ngRoute.directive:ngView `ngView`} directive and the
@@ -387,7 +387,7 @@ function $RouteProvider() {
      * </example>
      */
 
-    /**
+        /**
      * @ngdoc event
      * @name $route#$routeChangeStart
      * @eventType broadcast on root scope
@@ -407,7 +407,7 @@ function $RouteProvider() {
      * @param {Route} current Current route information.
      */
 
-    /**
+        /**
      * @ngdoc event
      * @name $route#$routeChangeSuccess
      * @eventType broadcast on root scope
@@ -422,7 +422,7 @@ function $RouteProvider() {
      * first route entered.
      */
 
-    /**
+        /**
      * @ngdoc event
      * @name $route#$routeChangeError
      * @eventType broadcast on root scope
@@ -435,7 +435,7 @@ function $RouteProvider() {
      * @param {Route} rejection Rejection of the promise. Usually the error of the failed promise.
      */
 
-    /**
+        /**
      * @ngdoc event
      * @name $route#$routeUpdate
      * @eventType broadcast on root scope
@@ -445,13 +445,13 @@ function $RouteProvider() {
      * instance of the Controller.
      */
 
-    var forceReload = false,
-        preparedRoute,
-        preparedRouteIsUpdateOnly,
-        $route = {
-          routes: routes,
+        let forceReload = false;
+        var preparedRoute;
+        var preparedRouteIsUpdateOnly;
+        var $route = {
+            routes,
 
-          /**
+            /**
            * @ngdoc method
            * @name $route#reload
            *
@@ -462,7 +462,7 @@ function $RouteProvider() {
            * As a result of that, {@link ngRoute.directive:ngView ngView}
            * creates new scope and reinstantiates the controller.
            */
-          reload: function() {
+            reload() {
             forceReload = true;
             $rootScope.$evalAsync(function() {
               // Don't support cancellation of a reload for now...
@@ -471,7 +471,7 @@ function $RouteProvider() {
             });
           },
 
-          /**
+            /**
            * @ngdoc method
            * @name $route#updateParams
            *
@@ -484,7 +484,7 @@ function $RouteProvider() {
            *
            * @param {Object} newParams mapping of URL parameter names to values
            */
-          updateParams: function(newParams) {
+            updateParams(newParams) {
             if (this.current && this.current.$$route) {
               var searchParams = {}, self=this;
 
@@ -499,17 +499,17 @@ function $RouteProvider() {
             else {
               throw $routeMinErr('norout', 'Tried updating route when with no current route');
             }
-          }
-        };
+          },
+          };
 
-    $rootScope.$on('$locationChangeStart', prepareRoute);
-    $rootScope.$on('$locationChangeSuccess', commitRoute);
+        $rootScope.$on('$locationChangeStart', prepareRoute);
+        $rootScope.$on('$locationChangeSuccess', commitRoute);
 
-    return $route;
+        return $route;
 
-    /////////////////////////////////////////////////////
+        // ///////////////////////////////////////////////////
 
-    /**
+        /**
      * @param on {string} current url
      * @param route {Object} route regexp to match the url against
      * @return {?Object}
@@ -520,69 +520,69 @@ function $RouteProvider() {
      * Inspired by match in
      * visionmedia/express/lib/router/router.js.
      */
-    function switchRouteMatcher(on, route) {
-      var keys = route.keys,
-          params = {};
+        function switchRouteMatcher(on, route) {
+          let {keys} = route;
+          var params = {};
 
-      if (!route.regexp) return null;
+          if (!route.regexp) return null;
 
-      var m = route.regexp.exec(on);
-      if (!m) return null;
+          let m = route.regexp.exec(on);
+          if (!m) return null;
 
-      for (var i = 1, len = m.length; i < len; ++i) {
-        var key = keys[i - 1];
+          for (let i = 1, len = m.length; i < len; ++i) {
+            let key = keys[i - 1];
 
-        var val = m[i];
+            let val = m[i];
 
-        if (key && val) {
-          params[key.name] = val;
+            if (key && val) {
+              params[key.name] = val;
+            }
+          }
+          return params;
         }
-      }
-      return params;
-    }
 
-    function prepareRoute($locationEvent) {
-      var lastRoute = $route.current;
+        function prepareRoute($locationEvent) {
+          let lastRoute = $route.current;
 
-      preparedRoute = parseRoute();
-      preparedRouteIsUpdateOnly = preparedRoute && lastRoute && preparedRoute.$$route === lastRoute.$$route
+          preparedRoute = parseRoute();
+          preparedRouteIsUpdateOnly = preparedRoute && lastRoute && preparedRoute.$$route === lastRoute.$$route
           && angular.equals(preparedRoute.pathParams, lastRoute.pathParams)
           && !preparedRoute.reloadOnSearch && !forceReload;
 
-      if (!preparedRouteIsUpdateOnly && (lastRoute || preparedRoute)) {
-        if ($rootScope.$broadcast('$routeChangeStart', preparedRoute, lastRoute).defaultPrevented) {
-          if ($locationEvent) {
-            $locationEvent.preventDefault();
-          }
-        }
-      }
-    }
-
-    function commitRoute() {
-      var lastRoute = $route.current;
-      var nextRoute = preparedRoute;
-
-      if (preparedRouteIsUpdateOnly) {
-        lastRoute.params = nextRoute.params;
-        angular.copy(lastRoute.params, $routeParams);
-        $rootScope.$broadcast('$routeUpdate', lastRoute);
-      } else if (nextRoute || lastRoute) {
-        forceReload = false;
-        $route.current = nextRoute;
-        if (nextRoute) {
-          if (nextRoute.redirectTo) {
-            if (angular.isString(nextRoute.redirectTo)) {
-              $location.path(interpolate(nextRoute.redirectTo, nextRoute.params)).search(nextRoute.params)
-                       .replace();
-            } else {
-              $location.url(nextRoute.redirectTo(nextRoute.pathParams, $location.path(), $location.search()))
-                       .replace();
+          if (!preparedRouteIsUpdateOnly && (lastRoute || preparedRoute)) {
+            if ($rootScope.$broadcast('$routeChangeStart', preparedRoute, lastRoute).defaultPrevented) {
+              if ($locationEvent) {
+                $locationEvent.preventDefault();
+              }
             }
           }
         }
 
-        $q.when(nextRoute).
-          then(function() {
+        function commitRoute() {
+          let lastRoute = $route.current;
+          let nextRoute = preparedRoute;
+
+          if (preparedRouteIsUpdateOnly) {
+            lastRoute.params = nextRoute.params;
+            angular.copy(lastRoute.params, $routeParams);
+            $rootScope.$broadcast('$routeUpdate', lastRoute);
+          } else if (nextRoute || lastRoute) {
+            forceReload = false;
+            $route.current = nextRoute;
+            if (nextRoute) {
+              if (nextRoute.redirectTo) {
+                if (angular.isString(nextRoute.redirectTo)) {
+                  $location.path(interpolate(nextRoute.redirectTo, nextRoute.params)).search(nextRoute.params)
+                    .replace();
+                } else {
+                  $location.url(nextRoute.redirectTo(nextRoute.pathParams, $location.path(), $location.search()))
+                    .replace();
+                }
+              }
+            }
+
+            $q.when(nextRoute)
+          .then(() => {
             if (nextRoute) {
               var locals = angular.extend({}, nextRoute.resolve),
                   template, templateUrl;
@@ -611,9 +611,9 @@ function $RouteProvider() {
               }
               return $q.all(locals);
             }
-          }).
+          })
           // after route change
-          then(function(locals) {
+          .then((locals) => {
             if (nextRoute == $route.current) {
               if (nextRoute) {
                 nextRoute.locals = locals;
@@ -621,22 +621,23 @@ function $RouteProvider() {
               }
               $rootScope.$broadcast('$routeChangeSuccess', nextRoute, lastRoute);
             }
-          }, function(error) {
+          }, (error) => {
             if (nextRoute == $route.current) {
               $rootScope.$broadcast('$routeChangeError', nextRoute, lastRoute, error);
             }
           });
-      }
-    }
+          }
+        }
 
 
-    /**
+        /**
      * @returns {Object} the current active route, by matching it against the URL
      */
-    function parseRoute() {
-      // Match a route
-      var params, match;
-      angular.forEach(routes, function(route, path) {
+        function parseRoute() {
+          // Match a route
+          let params; var 
+match;
+          angular.forEach(routes, (route, path) => {
         if (!match && (params = switchRouteMatcher($location.path(), route))) {
           match = inherit(route, {
             params: angular.extend({}, $location.search(), params),
@@ -644,16 +645,16 @@ function $RouteProvider() {
           match.$$route = route;
         }
       });
-      // No route matched; fallback to "otherwise" route
-      return match || routes[null] && inherit(routes[null], {params: {}, pathParams:{}});
-    }
+          // No route matched; fallback to "otherwise" route
+          return match || routes.null && inherit(routes.null, { params: {}, pathParams: {} });
+        }
 
-    /**
+        /**
      * @returns {string} interpolation of the redirect path with the parameters
      */
-    function interpolate(string, params) {
-      var result = [];
-      angular.forEach((string || '').split(':'), function(segment, i) {
+        function interpolate(string, params) {
+          let result = [];
+          angular.forEach((string || '').split(':'), (segment, i) => {
         if (i === 0) {
           result.push(segment);
         } else {
@@ -664,15 +665,15 @@ function $RouteProvider() {
           delete params[key];
         }
       });
-      return result.join('');
-    }
-  }];
-}
+          return result.join('');
+        }
+      }];
+  }
 
-ngRouteModule.provider('$routeParams', $RouteParamsProvider);
+  ngRouteModule.provider('$routeParams', $RouteParamsProvider);
 
 
-/**
+  /**
  * @ngdoc service
  * @name $routeParams
  * @requires $route
@@ -705,15 +706,15 @@ ngRouteModule.provider('$routeParams', $RouteParamsProvider);
  *  $routeParams ==> {chapterId:'1', sectionId:'2', search:'moby'}
  * ```
  */
-function $RouteParamsProvider() {
-  this.$get = function() { return {}; };
-}
+  function $RouteParamsProvider() {
+    this.$get = function () { return {}; };
+  }
 
-ngRouteModule.directive('ngView', ngViewFactory);
-ngRouteModule.directive('ngView', ngViewFillContentFactory);
+  ngRouteModule.directive('ngView', ngViewFactory);
+  ngRouteModule.directive('ngView', ngViewFillContentFactory);
 
 
-/**
+  /**
  * @ngdoc directive
  * @name ngView
  * @restrict ECA
@@ -879,21 +880,21 @@ ngRouteModule.directive('ngView', ngViewFillContentFactory);
  */
 
 
-/**
+  /**
  * @ngdoc event
  * @name ngView#$viewContentLoaded
  * @eventType emit on the current ngView scope
  * @description
  * Emitted every time the ngView content is reloaded.
  */
-ngViewFactory.$inject = ['$route', '$anchorScroll', '$animate'];
-function ngViewFactory($route, $anchorScroll, $animate) {
-  return {
-    restrict: 'ECA',
-    terminal: true,
-    priority: 400,
-    transclude: 'element',
-    link: function(scope, $element, attr, ctrl, $transclude) {
+  ngViewFactory.$inject = ['$route', '$anchorScroll', '$animate'];
+  function ngViewFactory($route, $anchorScroll, $animate) {
+    return {
+      restrict: 'ECA',
+      terminal: true,
+      priority: 400,
+      transclude: 'element',
+      link(scope, $element, attr, ctrl, $transclude) {
         var currentScope,
             currentElement,
             previousLeaveAnimation,
@@ -954,21 +955,21 @@ function ngViewFactory($route, $anchorScroll, $animate) {
             cleanupLastView();
           }
         }
-    }
-  };
-}
+    },
+    };
+  }
 
-// This directive is called during the $transclude call of the first `ngView` directive.
-// It will replace and compile the content of the element with the loaded template.
-// We need this directive so that the element content is already filled when
-// the link function of another directive on the same element as ngView
-// is called.
-ngViewFillContentFactory.$inject = ['$compile', '$controller', '$route'];
-function ngViewFillContentFactory($compile, $controller, $route) {
-  return {
-    restrict: 'ECA',
-    priority: -400,
-    link: function(scope, $element) {
+  // This directive is called during the $transclude call of the first `ngView` directive.
+  // It will replace and compile the content of the element with the loaded template.
+  // We need this directive so that the element content is already filled when
+  // the link function of another directive on the same element as ngView
+  // is called.
+  ngViewFillContentFactory.$inject = ['$compile', '$controller', '$route'];
+  function ngViewFillContentFactory($compile, $controller, $route) {
+    return {
+      restrict: 'ECA',
+      priority: -400,
+      link(scope, $element) {
       var current = $route.current,
           locals = current.locals;
 
@@ -987,9 +988,7 @@ function ngViewFillContentFactory($compile, $controller, $route) {
       }
 
       link(scope);
-    }
-  };
-}
-
-
-})(window, window.angular);
+    },
+    };
+  }
+}(window, window.angular));

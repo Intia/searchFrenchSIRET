@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Recherche d'établissements Français</title>
-    <meta name="description" content="Recherche à partir d'un nom, une entreprise, un artisan ou une association dans les registres SIRENE et RNA"/>
+    <meta name="description"
+        content="Recherche à partir d'un nom, une entreprise, un artisan ou une association dans les registres SIRENE et RNA" />
     <meta name="theme-color" content="#FF2444">
     <meta name="apple-mobile-web-app-capable" content="no">
 
@@ -17,8 +19,8 @@
     <![endif]-->
 
     <!-- css -->
-    <link rel="stylesheet" href="./css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="./css/index.css"/>
+    <link rel="stylesheet" href="./css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./css/index.css" />
     <!-- /css -->
 
     <!-- js -->
@@ -36,15 +38,15 @@
     <script src="./js/modules/index/views/indexCtrl.js"></script>
 
     <!-- Services -->
-    <script src="./js/services/establishmentsSrv.js"></script>
-    <script src="./js/services/sireneSrv.js"></script>
-    <script src="./js/services/rnaSrv.js"></script>
-    <script src="./js/services/asyncCallsSrv.js"></script>
-    <script src="./js/services/stringSrv.js"></script>
-    <script src="./js/services/establishmentsFilteringSrv.js"></script>
+    <script src="./js/services/establishments.service.js"></script>
+    <script src="./js/services/sirene.service.js"></script>
+    <script src="./js/services/rna.service.js"></script>
+    <script src="./js/services/asyncCalls.service.js"></script>
+    <script src="./js/services/string.service.js"></script>
 </head>
 
 <body ng-app="home" class="page" id="home-page">
     <div ng-view></div>
-    </body>
+</body>
+
 </html>
