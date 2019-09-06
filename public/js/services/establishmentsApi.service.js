@@ -691,6 +691,8 @@ angular.module('intia.services.establishments.api', [])
 
               const totalPage = Math.ceil(response.resultsBeforeFiltering / PER_PAGE);
 
+              resultsToSend.resultsBeforeFiltering = response.resultsBeforeFiltering;
+
               resultsToSend.resultsTable = [
                 ...resultsToSend.resultsTable,
                 ...response.resultsTable,

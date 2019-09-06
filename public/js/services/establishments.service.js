@@ -138,13 +138,12 @@ angular.module('intia.services.establishments', []).factory('EstablishmentSrv', 
           response.resultsBeforeFiltering = resultSirene.resultsBeforeFiltering
             + resultRna.resultsBeforeFiltering;
 
-          // In any case, we have at least an empty array for both results
-          response.resultsTable = mergeResultsTables(
-            resultSirene.resultsTable,
-            resultRna.resultsTable,
-          );
+          response.tooMuchResults = resultSirene.tooMuchResults || resultRna.tooMuchResults;
 
-          response.tooMuchResults = !resultSirene.tooMuchResults && !resultRna.tooMuchResults;
+          // In any case, we have at least an empty array for both results
+          response.resultsTable = !response.tooMuchResults
+            ? mergeResultsTables(resultSirene.resultsTable, resultRna.resultsTable)
+            : [];
 
           callback(null, response);
         });
