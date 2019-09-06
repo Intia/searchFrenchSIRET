@@ -1,8 +1,7 @@
 const home = angular.module('home', [
   'ngRoute',
-  'intia.services.establishment',
-  'intia.services.sirene',
-  'intia.services.rna',
+  'intia.services.establishments',
+  'intia.services.establishments.api',
   'intia.services.asyncCalls',
   'intia.services.string',
 ])

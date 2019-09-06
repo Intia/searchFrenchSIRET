@@ -120,14 +120,7 @@ home
                   return;
                 }
 
-                // If there is already enterprises stored into the resultsTable
-                if ($scope.view.establishments.resultsTable.length) {
-                  // We call the fucntion that will filter the resultTable
-                  $scope.view.establishments.resultsTable = EstablishmentSrv.filterEstablishments($scope.view.establishments.resultsTable, $scope.view.establishments.department);
-                } else {
-                  // We send the data to the api(s)
-                  $scope.apisCall();
-                }
+                $scope.apisCall();
               }
             }
           } else {
@@ -169,9 +162,7 @@ home
           // Call the getEstablishments() function of the getEstablishmentsSrv service
           // Use what the stringNormalize() function of the stringFormatingSrv service returns as the establishment's name
 
-          EstablishmentSrv.getEstablishments($scope.view.establishments.name, $scope.view.establishments.department, (err, result) => {
-            // console.log(result);
-
+          EstablishmentSrv.getAllEstablishments($scope.view.establishments.name, $scope.view.establishments.department, (err, result) => {
             // If there has been an error
             if (err) {
               $scope.view.errorMsg = err;

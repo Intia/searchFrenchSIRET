@@ -1,8 +1,8 @@
-angular.module('intia.services.sirene', [])
-  .factory('SireneSrv', ['$http', 'AsyncCallsSrv', 'StringSrv',
+angular.module('intia.services.establishments.api', [])
+  .factory('EstablishmentsApiSrv', ['$http', 'AsyncCallsSrv', 'StringSrv',
     ($http, AsyncCallsSrv, StringSrv) => {
       // The number of result per page wanted
-      const PER_PAGE = 1000;
+      const PER_PAGE = 100;
 
       // The maximum number of result to comput (Do not exceed 5 pages of results in its current state)
       const MAX_RESULTS_TO_COMPUTE = 5 * PER_PAGE; // should be a multiple of PER_PAGE
@@ -406,33 +406,34 @@ angular.module('intia.services.sirene', [])
       ];
 
       /**
-       * Format the given company's data
-       *
+       * Format the given company's data according to sirene's or rna's model
        * @param {Object} establishment The enterprise choosen in the page
        * @return {Object};
        */
       const formatSirene = (establishment) => (
         !establishment ? {} : {
           id: establishment.id,
-          name1: establishment.l1_normalisee,
-          name2: establishment.l2_normalisee,
+          name1: establishment.l1_normalisee || establishment.titre,
+          name2: establishment.l2_normalisee || establishment.titre_court,
           social_reason: establishment.nom_raison_sociale,
-          address: establishment.l4_normalisee,
-          city: establishment.libelle_commune,
+          address: establishment.l4_normalisee || establishment.adresse_gestion_libelle_voie,
+          city: establishment.libelle_commune || establishment.adresse_libelle_commune,
           siret: establishment.siret,
           siren: establishment.siren,
           naf: establishment.activite_principale,
-          department: establishment.departement,
-          postal_code: establishment.code_postal,
+          department: establishment.departement
+            || (establishment.adresse_code_postal ? establishment.adresse_code_postal.substr(0, 2) : ''),
+          postal_code: establishment.code_postal || establishment.adresse_code_postal,
           legal_form: establishment.libelle_nature_juridique_entreprise,
-          rna: establishment.numero_rna,
+          rna: establishment.numero_rna || establishment.id_association,
           rm: '',
           rcs: '',
           nafa: establishment.activite_principale_registre_metier,
           updateDate: establishment.updated_at,
-          // nom_raison_sociale
-          // search: l1_n + '\n' + l2_n + '\n' + l3_n + '\n' + l4_n + '\n' + l5_n + '\n' + l6_n,
-          // address_declare: l1_d + '\n' + l2_d + '\n' + l3_d + '\n' + l4_d + '\n' + l5_d + '\n' + l6_d
+          creation_date: establishment.date_creation,
+          phone: establishment.telephone,
+          website: establishment.site_web,
+          email: establishment.email,
         }
       );
 
@@ -460,10 +461,11 @@ angular.module('intia.services.sirene', [])
        * Check if the name of the searched establishment match the names of the enterprise given
        *
        * @param {string} name The value used to filter the establishment object
-       * @param {Object} ent the establishment object
+       * @param {Object} establishment the establishment object
+       * @param {string} department (optional)
        * @return {boolean}
        */
-      const isEstablishmentCandidate = (name, establishment) => {
+      const isEstablishmentCandidate = (name, establishment, department) => {
         if (!name || !establishment) {
           return false;
         }
@@ -474,11 +476,14 @@ angular.module('intia.services.sirene', [])
           establishment.social_reason,
         ];
 
-        for (let i = 0; i < candidateFields.length; i += 1) {
-          const normalizedFieldValue = formatEstablishmentName(candidateFields[i]);
+        // Candidate must match the department if given
+        if (!department || department === establishment.department) {
+          for (let i = 0; i < candidateFields.length; i += 1) {
+            const normalizedFieldValue = formatEstablishmentName(candidateFields[i]);
 
-          if (StringSrv.doAllWordsMatch(name, normalizedFieldValue)) {
-            return true;
+            if (StringSrv.doAllWordsMatch(name, normalizedFieldValue)) {
+              return true;
+            }
           }
         }
 
@@ -487,23 +492,24 @@ angular.module('intia.services.sirene', [])
 
       /**
        * Filters establishments on their name property
-       *
        * @param {Array} establishments - List of establishments to filter
-       * @param {string} name - Value of the filter
+       * @param {string} name - Value of the name filter
+       * @param {string} department - Value of the department filter (optional)
+       * @return {Array} Filtered establishments
        */
-      const filterEstablishment = (establishments, name) => {
+      const filterEstablishment = (establishments, name, department) => {
         if (!establishments || !name) {
           return null;
         }
 
-        const establishmentName = name.toUpperCase();
+        const establishmentName = formatEstablishmentName(name);
         const filteredEstablishments = [];
 
         establishments.forEach((establishment) => {
-          const formatedEstablishment = formatSirene(establishment);
+          const formattedEstablishment = formatSirene(establishment);
 
-          if (isEstablishmentCandidate(establishmentName, formatedEstablishment)) {
-            filteredEstablishments.push(formatedEstablishment);
+          if (isEstablishmentCandidate(establishmentName, formattedEstablishment, department)) {
+            filteredEstablishments.push(formattedEstablishment);
           }
         });
 
@@ -521,12 +527,10 @@ angular.module('intia.services.sirene', [])
       const setEstablishmentType = (establishment) => {
         // Ignore associations (with RNA code)
         if (!establishment || establishment.rna) {
-          return {};
+          return establishment || {};
         }
 
-        const result = {
-          ...establishment,
-        };
+        const result = { ...establishment };
 
         let isAnEnterprise = false;
 
@@ -535,13 +539,9 @@ angular.module('intia.services.sirene', [])
           if (establishment.legal_form) {
             const legalFormArray = StringSrv.normalizeString((establishment.legal_form)).split(' ');
 
-            // Check if legal form has a word meaning that the establishment is  a craftman's
-            for (let i = 0; i < legalFormArray.length; i += 1) {
-              if (ENTERPRISES_LEGAL_FORMS_WORDS.includes(legalFormArray[i])) {
-                isAnEnterprise = true;
-                break;
-              }
-            }
+            // Check if legal form has a word meaning that the establishment is a craftman's
+            isAnEnterprise = !!legalFormArray
+              .find((word) => ENTERPRISES_LEGAL_FORMS_WORDS.includes(word));
           }
 
           // If the naf code is not a member of the CRAFTMEN_NAF_CODE
@@ -562,11 +562,21 @@ angular.module('intia.services.sirene', [])
 
       /**
        * Function that get each enterprise of the results page
-       * @param {*} pageRank
-       * @throw Error if request unvalid or error while contacting the server
+       * @param {string} establishmentName
+       * @param {string} establishmentDepartment
+       * @param {number} pageRank
+       * @param {string} target 'sirene' or 'rna'
+       * @param {function} callback
+       * @return {Object}
        */
-      const getAllEstablishments = (establishmentName, establishmentDepartment, pageRank, callback) => {
-        if (!establishmentName) {
+      const fetchEstablishments = (
+        name,
+        department,
+        pageRank,
+        target,
+        callback,
+      ) => {
+        if (!name) {
           callback('Error during server request');
           return;
         }
@@ -577,24 +587,26 @@ angular.module('intia.services.sirene', [])
           resultsTable: [],
         };
 
-        const name = formatEstablishmentName(establishmentName);
+        const formattedName = formatEstablishmentName(name);
 
-        if (!name || name.length < 3) {
+        if (!formattedName || formattedName.length < 3) {
           callback('name not adapted');
           return;
         }
 
-        // We create a new http request specifying the rank of the willed page
-        const url = `https://entreprise.data.gouv.fr/api/sirene/v1/full_text/${name}?per_page=${PER_PAGE}&page=${pageRank}&departement=${establishmentDepartment}`;
+        const url = `https://entreprise.data.gouv.fr/api/${target}/v1/full_text/${formattedName}`
+          + `?per_page=${PER_PAGE}`
+          + `&page=${pageRank}`
+          + `&departement=${department}`;
+
         $http.get(url)
           .success((data, status) => {
-            // CHECK OF THE HTTP REQUEST'S VALIDITY
             if (status !== 200) {
               callback('Error during server request');
               return;
             }
 
-            if (!data || !data.etablissement) {
+            if (!data || (!data.etablissement && !data.association)) {
               callback(null, result);
               return;
             }
@@ -602,24 +614,26 @@ angular.module('intia.services.sirene', [])
             // We count all the occurences of the establishments given existing in the json retrieved
             result.resultsBeforeFiltering = data.total_results;
 
-            // If the number of results is greater than the limit of results wanted
             if (result.resultsBeforeFiltering > MAX_RESULTS_TO_COMPUTE) {
-              // we send the 'tooMuchletiable' letiable to 'true'
               result.tooMuchResults = true;
               callback(null, result);
               return;
             }
 
-            const filteredArr = filterEstablishment(data.etablissement, establishmentName);
+            const filteredEstablishments = filterEstablishment(
+              target === 'sirene' ? data.etablissement : data.association,
+              formattedName,
+              department,
+            ).map((establishment) => setEstablishmentType(establishment));
 
-            // We use the setEstablishmentType() function on each establishment of the filterdArr with the map() function array before concat result.resultsTable and filteredArr
-            const resultMap = filteredArr.map((establishment) => setEstablishmentType(establishment));
-            result.resultsTable = result.resultsTable.concat(resultMap);
+            result.resultsTable = [
+              ...result.resultsTable,
+              ...filteredEstablishments,
+            ];
 
             callback(null, result);
           })
           .error((data, status) => {
-            // When there is no result, we get back a 404 error
             if (status === 404) {
               callback(null, result);
               return;
@@ -631,13 +645,14 @@ angular.module('intia.services.sirene', [])
 
       const exports = {
         /**
-         * getEstablishments search enterprises from establishmentName AND establishmentDepartment
-         * if founded enterprises greater than 500, THROW an ErrorTooManyResult
-         * @param {*} establishmentName The name of the establishment
-         * @param {*} establishmentDepartment The department of the establishment (can be empty)
-         * @return [] :
+         * Retrieve establishments matching a name and optionnally a department
+         * @param {string} establishmentName The name of the establishment
+         * @param {string} establishmentDepartment The department of the establishment (can be empty)
+         * @param {function} callback
+         * @param {boolean} isAssociation true to fetch Rna's API, false to fetch sirene's API
+         * @return {Object}
          */
-        getEstablishments(establishmentName, establishmentDepartment, callback) {
+        getEstablishments(establishmentName, establishmentDepartment, callback, isAssociation = false) {
           if (!establishmentName) {
             callback('No establishment name to search during Request');
             return;
@@ -645,81 +660,85 @@ angular.module('intia.services.sirene', [])
 
           // We declare the results object we will return to the estasblishment file
           const resultsToSend = {
-
             tooMuchResults: false,
             resultsBeforeFiltering: 0,
-            resultsTable: [
-              // {
-              //     id: Number,
-              //     name1: String,
-              //     name2: String
-              //     address: String,
-              //     siret: Number,
-              //     naf: String,
-              //     department: Number,
-              //     legal_form: String,
-              //     rna: String,
-              //
-              // }
-            ],
+            resultsTable: [],
           };
 
+          const target = isAssociation ? 'rna' : 'sirene';
+
           // WE GET THE FIRST PAGE OF RESULTS
-          getAllEstablishments(establishmentName, establishmentDepartment, 1, (error, result) => {
-            if (!establishmentName) {
-              callback('No establishment name to search during Request');
-              return;
-            }
+          fetchEstablishments(
+            establishmentName,
+            establishmentDepartment,
+            1,
+            target,
+            (error, response) => {
+              if (!establishmentName) {
+                callback('No establishment name to search during Request');
+                return;
+              }
 
-            if (error) {
-              callback(error);
-              return;
-            }
+              if (error) {
+                callback(error);
+                return;
+              }
 
-            if (result.tooMuchResults) {
-              callback(null, result);
-              return;
-            }
+              if (response.tooMuchResults) {
+                callback(null, response);
+                return;
+              }
 
-            const totalPage = Math.ceil(result.resultsBeforeFiltering / PER_PAGE);
+              const totalPage = Math.ceil(response.resultsBeforeFiltering / PER_PAGE);
 
-            resultsToSend.resultsTable = resultsToSend.resultsTable.concat(result.resultsTable);
+              resultsToSend.resultsTable = [
+                ...resultsToSend.resultsTable,
+                ...response.resultsTable,
+              ];
 
-            if (totalPage <= 1) {
-              callback(null, result);
-              return;
-            }
+              if (totalPage <= 1) {
+                callback(null, response);
+                return;
+              }
 
-            const pageRank = 2;
-            const maxLoop = Math.min(totalPage, (MAX_RESULTS_TO_COMPUTE / PER_PAGE)) + 1;
+              const pageRank = 2;
+              const maxLoop = Math.min(totalPage, (MAX_RESULTS_TO_COMPUTE / PER_PAGE)) + 1;
 
-            AsyncCallsSrv.asyncFor(pageRank, maxLoop,
-              /* loopFunction */
-              (index, next) => {
-                getAllEstablishments(establishmentName, establishmentDepartment, index, (_error, _result) => {
+              AsyncCallsSrv.asyncFor(
+                pageRank,
+                maxLoop,
+                (index, next) => { // loopFunction
+                  fetchEstablishments(
+                    establishmentName,
+                    establishmentDepartment,
+                    index,
+                    target,
+                    (_error, _response) => {
+                      if (_error) {
+                        next(_error);
+                        return;
+                      }
+
+                      resultsToSend.resultsTable = [
+                        ...resultsToSend.resultsTable,
+                        ..._response.resultsTable,
+                      ];
+
+                      next();
+                    },
+                  );
+                },
+                (_error) => { // callback
                   if (_error) {
-                    next(_error);
+                    callback(error);
                     return;
                   }
 
-                  resultsToSend.resultsTable = [
-                    ...resultsToSend.resultsTable,
-                    _result.resultsTable,
-                  ];
-
-                  next();
-                });
-              },
-              /* after all loop or in error case */
-              (_error) => {
-                if (_error) {
-                  callback(error);
-                  return;
-                }
-
-                callback(null, resultsToSend);
-              });
-          });
+                  callback(null, resultsToSend);
+                },
+              );
+            },
+          );
         },
       };
 

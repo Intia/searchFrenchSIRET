@@ -16914,7 +16914,7 @@ function formatNumber(number, pattern, groupSep, decimalSep, fractionSize) {
   var isNegative = number < 0;
   number = Math.abs(number);
   var numStr = number + '',
-      formatedText = '',
+      formattedText = '',
       parts = [];
 
   var hasExponent = false;
@@ -16923,7 +16923,7 @@ function formatNumber(number, pattern, groupSep, decimalSep, fractionSize) {
     if (match && match[2] == '-' && match[3] > fractionSize + 1) {
       number = 0;
     } else {
-      formatedText = numStr;
+      formattedText = numStr;
       hasExponent = true;
     }
   }
@@ -16953,17 +16953,17 @@ function formatNumber(number, pattern, groupSep, decimalSep, fractionSize) {
       pos = whole.length - lgroup;
       for (i = 0; i < pos; i++) {
         if ((pos - i) % group === 0 && i !== 0) {
-          formatedText += groupSep;
+          formattedText += groupSep;
         }
-        formatedText += whole.charAt(i);
+        formattedText += whole.charAt(i);
       }
     }
 
     for (i = pos; i < whole.length; i++) {
       if ((whole.length - i) % lgroup === 0 && i !== 0) {
-        formatedText += groupSep;
+        formattedText += groupSep;
       }
-      formatedText += whole.charAt(i);
+      formattedText += whole.charAt(i);
     }
 
     // format fraction part.
@@ -16971,11 +16971,11 @@ function formatNumber(number, pattern, groupSep, decimalSep, fractionSize) {
       fraction += '0';
     }
 
-    if (fractionSize && fractionSize !== "0") formatedText += decimalSep + fraction.substr(0, fractionSize);
+    if (fractionSize && fractionSize !== "0") formattedText += decimalSep + fraction.substr(0, fractionSize);
   } else {
     if (fractionSize > 0 && number < 1) {
-      formatedText = number.toFixed(fractionSize);
-      number = parseFloat(formatedText);
+      formattedText = number.toFixed(fractionSize);
+      number = parseFloat(formattedText);
     }
   }
 
@@ -16984,7 +16984,7 @@ function formatNumber(number, pattern, groupSep, decimalSep, fractionSize) {
   }
 
   parts.push(isNegative ? pattern.negPre : pattern.posPre,
-             formatedText,
+             formattedText,
              isNegative ? pattern.negSuf : pattern.posSuf);
   return parts.join('');
 }
