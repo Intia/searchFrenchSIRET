@@ -148,6 +148,23 @@ angular.module('intia.services.establishments', []).factory('EstablishmentSrv', 
           callback(null, response);
         });
       },
+
+      /**
+       * Return a array containing all the object having the same value in their department field
+       *
+       * Get an array of formatized establishment objects and filter all objects by comparing their department field's value with the department variable given
+       * Return an array containing only the objects having the same department value in their department field
+       *
+       * @param {Array} establishmentsArray An array of establishment objects
+       * @param {string} department the department value used to filter the establishmentArray
+       */
+      establishmentsResultsFiltering(establishmentsArray, department) {
+        if (!establishmentsArray || !department) {
+          return false;
+        }
+
+        return establishmentsArray.filter((establishment) => (establishment.department === department));
+      },
     };
 
     return exports;

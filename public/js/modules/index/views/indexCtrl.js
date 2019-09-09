@@ -1,10 +1,18 @@
-home.controller('IndexCtrl', ['$scope', 'EstablishmentSrv',
+home.controller('IndexCtrl', [
+  '$scope',
+  'EstablishmentSrv',
   function ($scope, EstablishmentSrv) {
     // The max amount of results to show to the user
-    const MAX_RESULTS_TO_SHOW = 20;
+    const MAX_RESULTS_TO_SHOW = 10;
 
     // A list of french departments that are in fact string
     const STRING_DEPARTMENTS = ['2A', '2B'];
+
+    $scope.$watchGroup(['view.establishments.searchSuccess'], (newVal) => {
+      if (newVal[0]) {
+        $scope.view.establishments.department = '';
+      }
+    });
 
     angular.extend($scope, {
       view: {
@@ -109,25 +117,48 @@ home.controller('IndexCtrl', ['$scope', 'EstablishmentSrv',
         if ($scope.view.establishments.name === $scope.view.establishments.previousSearchedName) {
           // If the current searched department name is different than the previous searched one
           if ($scope.view.establishments.department !== $scope.view.establishments.previousSearchedDepartment) {
-            if (!!$scope.view.establishments.department && $scope.departmentUnvalidity()) {
-              return;
-            }
+            // If the searched department is null
+            if (!$scope.view.establishments.department) {
+              // We search the establishment by calling the api(s)
+              $scope.apisCall();
+            } else {
+              // We check if the department is valid or not
+              if ($scope.departmentUnvalidity()) {
+                // If t's not valid we stop the search
+                return;
+              }
 
-            $scope.apisCall();
+              // If there is already enterprises stored into the resultsTable
+              if ($scope.view.establishments.resultsTable.length) {
+                // We call the fucntion that will filter the resultTable
+                $scope.view.establishments.resultsTable = EstablishmentSrv.establishmentsResultsFiltering($scope.view.establishments.resultsTable, $scope.view.establishments.department);
+              } else {
+                // We send the data to the api(s)
+                $scope.apisCall();
+              }
+            }
           }
         } else {
           if ($scope.view.establishments.department) {
             if ($scope.departmentUnvalidity()) {
+              // If t's not valid we stop the search
               return;
             }
           }
 
+          // We search the establishment by calling the api(s)
           $scope.apisCall();
         }
 
-        // We update the value of the last name + department searched
+        // At the end of the establishment search :
+        // We update the value of the last establishment searched
         $scope.view.establishments.previousSearchedName = $scope.view.establishments.name;
+
+        // We update the value of the last department searched
         $scope.view.establishments.previousSearchedDepartment = $scope.view.establishments.department;
+
+        // We reset the value of the department to search
+        $scope.view.establishments.department = '';
       },
 
       /**
