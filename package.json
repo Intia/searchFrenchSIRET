@@ -6,9 +6,14 @@
   "homepage": "https://intia.fr",
   "repository": "https://github.com/intia/searchFrenchSIRET",
   "dependencies": {
-    "http-server": "^0.11.1"
+    "http-server": "^0.11.1",
+    "lodash": "^4.17.15"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^6.3.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2"
+  },
   "engines": {
     "node": "11.2.0"
   },
