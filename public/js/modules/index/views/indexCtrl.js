@@ -181,19 +181,19 @@ home.controller('IndexCtrl', [
         // Use what the stringNormalize() function of the stringFormatingSrv service returns as the establishment's name
 
         EstablishmentSrv.getAllEstablishments($scope.view.establishments.name, $scope.view.establishments.department)
-          .then((response) => {
-            $scope.view.establishments.tooMuchResults = response.tooMuchResults;
-            $scope.view.establishments.resultsTable = response.resultsTable;
-            $scope.view.establishments.resultsBeforeFiltering = response.resultsBeforeFiltering;
-            $scope.view.establishments.searchSuccess = true;
-            $scope.$apply(); // Force update
-          })
-          .catch((error) => {
-            $scope.view.errorMsg = error;
-            $scope.view.establishments.searchSuccess = true;
-            $scope.view.establishments.resultsTable = [];
-            $scope.$apply(); // Force update
-          });
+          .then(
+            (response) => {
+              $scope.view.establishments.tooMuchResults = response.tooMuchResults;
+              $scope.view.establishments.resultsTable = response.resultsTable;
+              $scope.view.establishments.resultsBeforeFiltering = response.resultsBeforeFiltering;
+              $scope.view.establishments.searchSuccess = true;
+            },
+            (error) => {
+              $scope.view.errorMsg = error;
+              $scope.view.establishments.searchSuccess = true;
+              $scope.view.establishments.resultsTable = [];
+            },
+          );
       },
     });
   },

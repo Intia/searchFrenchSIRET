@@ -1,6 +1,6 @@
 angular.module('intia.services.establishments', []).factory('EstablishmentSrv', [
-  'EstablishmentsApiSrv',
-  (EstablishmentsApiSrv) => {
+  '$q', 'EstablishmentsApiSrv',
+  ($q, EstablishmentsApiSrv) => {
     /**
     * Merge two establishments
     * The most recently updated establishment has priority in case of conflict (same fields)
@@ -88,19 +88,6 @@ angular.module('intia.services.establishments', []).factory('EstablishmentSrv', 
       return [...fusionTable, ...rnaTable];
     };
 
-    /**
-     * Call the sirene and rna api
-     * @param {string} name The name of the establishment to search for
-     * @param {string} department The department of the establishment to search for
-     */
-    const callApiServices = (name, department) => EstablishmentsApiSrv
-      .getEstablishments(name, department) // Fetch Sirene's API
-      .catch((errorSirene) => { throw errorSirene; })
-      .then((responseSirene) => EstablishmentsApiSrv
-        .getEstablishments(name, department, true) // Fetch rna's api
-        .catch((errorRna) => { throw errorRna; })
-        .then((responseRna) => ({ responseSirene, responseRna })));
-
     const exports = {
       /**
        * Fetch all establishments matching name and department filters
@@ -116,23 +103,25 @@ angular.module('intia.services.establishments', []).factory('EstablishmentSrv', 
           resultsTable: [],
         };
 
-        return new Promise((resolve, reject) => {
-          callApiServices(name, department)
-            .catch((error) => reject(error))
-            .then(({ responseSirene, responseRna }) => {
-              response.resultsBeforeFiltering = responseSirene.resultsBeforeFiltering
-                + responseRna.resultsBeforeFiltering;
+        const requests = [
+          EstablishmentsApiSrv.getEstablishments(name, department), // Request Sirene's API
+          EstablishmentsApiSrv.getEstablishments(name, department, true), // Request Rna's API
+        ];
 
-              response.tooMuchResults = responseSirene.tooMuchResults || responseRna.tooMuchResults;
+        return $q.all(requests).then(
+          ([sirene, rna]) => {
+            response.resultsBeforeFiltering = sirene.resultsBeforeFiltering + rna.resultsBeforeFiltering;
+            response.tooMuchResults = sirene.tooMuchResults || rna.tooMuchResults;
 
-              // In any case, we have at least an empty array for both results
-              response.resultsTable = !response.tooMuchResults
-                ? mergeResultsTables(responseSirene.resultsTable, responseRna.resultsTable)
-                : [];
+            // In any case, we have at least an empty array for both results
+            response.resultsTable = response.tooMuchResults
+              ? []
+              : mergeResultsTables(sirene.resultsTable, rna.resultsTable);
 
-              resolve(response);
-            });
-        });
+            return response;
+          },
+          (error) => $q.reject(error),
+        );
       },
 
       /**

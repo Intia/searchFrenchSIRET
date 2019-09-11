@@ -1,6 +1,6 @@
 angular.module('intia.services.establishments.api', [])
-  .factory('EstablishmentsApiSrv', ['$http', 'StringSrv',
-    ($http, StringSrv) => {
+  .factory('EstablishmentsApiSrv', ['$http', '$q', 'StringSrv',
+    ($http, $q, StringSrv) => {
       // The number of result per page wanted
       const PER_PAGE = 100;
 
@@ -570,7 +570,7 @@ angular.module('intia.services.establishments.api', [])
        */
       const fetchEstablishments = (name, department, pageRank, target) => {
         if (!name) {
-          return Promise.reject(new Error('Error during server request'));
+          return $q.reject(new Error('Error during server request'));
         }
 
         const result = {
@@ -582,7 +582,7 @@ angular.module('intia.services.establishments.api', [])
         const formattedName = formatEstablishmentName(name);
 
         if (!formattedName || formattedName.length < 3) {
-          return Promise.reject(new Error('name not adapted'));
+          return $q.reject(new Error('name not adapted'));
         }
 
         const url = `https://entreprise.data.gouv.fr/api/${target}/v1/full_text/${formattedName}`
@@ -590,10 +590,10 @@ angular.module('intia.services.establishments.api', [])
           + `&page=${pageRank}`
           + `&departement=${department}`;
 
-        return $http.get(url)
-          .then(({ data, status }) => {
+        return $http.get(url).then(
+          ({ data, status }) => {
             if (status !== 200) {
-              throw new Error('Error during server request');
+              return $q.reject(new Error('Error during server request'));
             }
 
             if (!data || (!data.etablissement && !data.association)) {
@@ -605,14 +605,12 @@ angular.module('intia.services.establishments.api', [])
 
             if (result.resultsBeforeFiltering > MAX_RESULTS_TO_COMPUTE) {
               result.tooMuchResults = true;
-              return Promise.resolve(result);
+              return result;
             }
 
-            const filteredEstablishments = filterEstablishment(
-              target === 'sirene' ? data.etablissement : data.association,
-              formattedName,
-              department,
-            ).map((establishment) => setEstablishmentType(establishment));
+            const establishments = target === 'sirene' ? data.etablissement : data.association;
+            const filteredEstablishments = filterEstablishment(establishments, formattedName, department)
+              .map((establishment) => setEstablishmentType(establishment));
 
             result.resultsTable = [
               ...result.resultsTable,
@@ -620,27 +618,22 @@ angular.module('intia.services.establishments.api', [])
             ];
 
             return result;
-          })
-          .catch((error) => {
-            if (error.status === 404) {
-              return result;
-            }
-
-            throw new Error('request error');
-          });
+          },
+          (error) => ((error.status === 404) ? result : $q.reject(new Error('request error'))),
+        );
       };
 
       const exports = {
         /**
          * Retrieve establishments matching a name and optionnally a department
-         * @param {string} establishmentName The name of the establishment
-         * @param {string} establishmentDepartment The department of the establishment (can be empty)
+         * @param {string} name The name of the establishment
+         * @param {string} department The department of the establishment (can be empty)
          * @param {boolean} isAssociation true to fetch Rna's API, false to fetch sirene's API
          * @return {Object}
          */
-        getEstablishments(establishmentName, establishmentDepartment, isAssociation = false) {
-          if (!establishmentName) {
-            return Promise.reject(new Error('No establishment name to search during Request'));
+        getEstablishments(name, department, isAssociation = false) {
+          if (!name) {
+            return $q.reject(new Error('No establishment name to search during Request'));
           }
 
           // We declare the results object we will return to the estasblishment file
@@ -652,47 +645,40 @@ angular.module('intia.services.establishments.api', [])
 
           const target = isAssociation ? 'rna' : 'sirene';
 
-          if (!establishmentName) {
-            return Promise.reject(new Error('No establishment name to search during Request'));
-          }
-
-          // WE GET THE FIRST PAGE OF RESULTS
-          return fetchEstablishments(establishmentName, establishmentDepartment, 1, target)
-            .catch((error) => { throw error; })
-            .then((response) => {
-              if (response.tooMuchResults) {
-                return response;
-              }
-
+          // Get first page of results
+          return fetchEstablishments(name, department, 1, target).then(
+            (response) => {
               const totalPage = Math.ceil(response.resultsBeforeFiltering / PER_PAGE);
 
-              resultsToSend.resultsBeforeFiltering = response.resultsBeforeFiltering;
-
-              resultsToSend.resultsTable = [
-                ...resultsToSend.resultsTable,
-                ...response.resultsTable,
-              ];
-
-              if (totalPage <= 1) {
+              if (response.tooMuchResults || totalPage <= 1) {
                 return response;
               }
 
-              const pageRank = 2;
+              resultsToSend.resultsBeforeFiltering = response.resultsBeforeFiltering;
+              resultsToSend.resultsTable = response.resultsTable;
+
               const maxLoop = Math.min(totalPage, (MAX_RESULTS_TO_COMPUTE / PER_PAGE)) + 1;
 
-              for (let index = pageRank; index < maxLoop; index += 1) {
-                fetchEstablishments(establishmentName, establishmentDepartment, index, target)
-                  .then((_response) => {
-                    resultsToSend.resultsTable = [
-                      ...resultsToSend.resultsTable,
-                      ..._response.resultsTable,
-                    ];
-                  })
-                  .catch((_error) => { throw _error; });
+              let pagesRequests = [];
+
+              // Build requests for remaining pages
+              for (let index = 2; index < maxLoop; index += 1) {
+                pagesRequests = [...pagesRequests, fetchEstablishments(name, department, index, target)];
               }
 
-              return resultsToSend;
-            });
+              return $q.all(pagesRequests).then(
+                (responses) => {
+                  responses.forEach((page) => {
+                    resultsToSend.resultsTable = [...resultsToSend.resultsTable, ...page.resultsTable];
+                  });
+                  
+                  return resultsToSend;
+                },
+                (_error) => $q.reject(_error),
+              );
+            },
+            (error) => $q.reject(error),
+          );
         },
       };
 
