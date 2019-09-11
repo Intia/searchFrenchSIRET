@@ -92,27 +92,14 @@ angular.module('intia.services.establishments', []).factory('EstablishmentSrv', 
      * Call the sirene and rna api
      * @param {string} name The name of the establishment to search for
      * @param {string} department The department of the establishment to search for
-     * @param {function} callback Callback to execute for each api call
      */
-    const callApiServices = (name, department, callback) => {
-      // Fetch sirene's api
-      EstablishmentsApiSrv.getEstablishments(name, department, (errorSirene, resultSirene) => {
-        if (errorSirene) {
-          callback(errorSirene);
-          return;
-        }
-
-        // Fetch rna's api
-        EstablishmentsApiSrv.getEstablishments(name, department, (errorRna, resultRna) => {
-          if (errorRna) {
-            callback(errorRna);
-            return;
-          }
-
-          callback(null, { resultSirene, resultRna });
-        }, true);
-      });
-    };
+    const callApiServices = (name, department) => EstablishmentsApiSrv
+      .getEstablishments(name, department) // Fetch Sirene's API
+      .catch((errorSirene) => { throw errorSirene; })
+      .then((responseSirene) => EstablishmentsApiSrv
+        .getEstablishments(name, department, true) // Fetch rna's api
+        .catch((errorRna) => { throw errorRna; })
+        .then((responseRna) => ({ responseSirene, responseRna })));
 
     const exports = {
       /**
@@ -121,7 +108,7 @@ angular.module('intia.services.establishments', []).factory('EstablishmentSrv', 
        * @param {*} department The department of the establishment (optional)
        * @return {Object}
        */
-      getAllEstablishments(name, department, callback) {
+      getAllEstablishments(name, department) {
         const response = {
           tooMuchResults: false,
           errorMsg: '',
@@ -129,23 +116,22 @@ angular.module('intia.services.establishments', []).factory('EstablishmentSrv', 
           resultsTable: [],
         };
 
-        callApiServices(name, department, (error, { resultSirene, resultRna }) => {
-          if (error) {
-            callback(error);
-            return;
-          }
+        return new Promise((resolve, reject) => {
+          callApiServices(name, department)
+            .catch((error) => reject(error))
+            .then(({ responseSirene, responseRna }) => {
+              response.resultsBeforeFiltering = responseSirene.resultsBeforeFiltering
+                + responseRna.resultsBeforeFiltering;
 
-          response.resultsBeforeFiltering = resultSirene.resultsBeforeFiltering
-            + resultRna.resultsBeforeFiltering;
+              response.tooMuchResults = responseSirene.tooMuchResults || responseRna.tooMuchResults;
 
-          response.tooMuchResults = resultSirene.tooMuchResults || resultRna.tooMuchResults;
+              // In any case, we have at least an empty array for both results
+              response.resultsTable = !response.tooMuchResults
+                ? mergeResultsTables(responseSirene.resultsTable, responseRna.resultsTable)
+                : [];
 
-          // In any case, we have at least an empty array for both results
-          response.resultsTable = !response.tooMuchResults
-            ? mergeResultsTables(resultSirene.resultsTable, resultRna.resultsTable)
-            : [];
-
-          callback(null, response);
+              resolve(response);
+            });
         });
       },
 

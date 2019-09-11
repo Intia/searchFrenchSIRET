@@ -3,7 +3,6 @@ const home = angular
     'ngRoute',
     'intia.services.establishments',
     'intia.services.establishments.api',
-    'intia.services.asyncCalls',
     'intia.services.string',
   ])
   .config(['$routeProvider',

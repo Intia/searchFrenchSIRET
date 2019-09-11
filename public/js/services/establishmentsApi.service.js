@@ -1,6 +1,6 @@
 angular.module('intia.services.establishments.api', [])
-  .factory('EstablishmentsApiSrv', ['$http', 'AsyncCallsSrv', 'StringSrv',
-    ($http, AsyncCallsSrv, StringSrv) => {
+  .factory('EstablishmentsApiSrv', ['$http', 'StringSrv',
+    ($http, StringSrv) => {
       // The number of result per page wanted
       const PER_PAGE = 100;
 
@@ -569,16 +569,9 @@ angular.module('intia.services.establishments.api', [])
        * @param {function} callback
        * @return {Object}
        */
-      const fetchEstablishments = (
-        name,
-        department,
-        pageRank,
-        target,
-        callback,
-      ) => {
+      const fetchEstablishments = (name, department, pageRank, target) => {
         if (!name) {
-          callback('Error during server request');
-          return;
+          return Promise.reject(new Error('Error during server request'));
         }
 
         const result = {
@@ -590,8 +583,7 @@ angular.module('intia.services.establishments.api', [])
         const formattedName = formatEstablishmentName(name);
 
         if (!formattedName || formattedName.length < 3) {
-          callback('name not adapted');
-          return;
+          return Promise.reject(new Error('name not adapted'));
         }
 
         const url = `https://entreprise.data.gouv.fr/api/${target}/v1/full_text/${formattedName}`
@@ -599,16 +591,14 @@ angular.module('intia.services.establishments.api', [])
           + `&page=${pageRank}`
           + `&departement=${department}`;
 
-        $http.get(url)
-          .success((data, status) => {
+        return $http.get(url)
+          .then(({ data, status }) => {
             if (status !== 200) {
-              callback('Error during server request');
-              return;
+              throw new Error('Error during server request');
             }
 
             if (!data || (!data.etablissement && !data.association)) {
-              callback(null, result);
-              return;
+              return result;
             }
 
             // We count all the occurences of the establishments given existing in the json retrieved
@@ -616,8 +606,7 @@ angular.module('intia.services.establishments.api', [])
 
             if (result.resultsBeforeFiltering > MAX_RESULTS_TO_COMPUTE) {
               result.tooMuchResults = true;
-              callback(null, result);
-              return;
+              return Promise.resolve(result);
             }
 
             const filteredEstablishments = filterEstablishment(
@@ -631,15 +620,14 @@ angular.module('intia.services.establishments.api', [])
               ...filteredEstablishments,
             ];
 
-            callback(null, result);
+            return result;
           })
-          .error((data, status) => {
-            if (status === 404) {
-              callback(null, result);
-              return;
+          .catch((error) => {
+            if (error.status === 404) {
+              return result;
             }
 
-            callback('request error');
+            throw new Error('request error');
           });
       };
 
@@ -652,10 +640,9 @@ angular.module('intia.services.establishments.api', [])
          * @param {boolean} isAssociation true to fetch Rna's API, false to fetch sirene's API
          * @return {Object}
          */
-        getEstablishments(establishmentName, establishmentDepartment, callback, isAssociation = false) {
+        getEstablishments(establishmentName, establishmentDepartment, isAssociation = false) {
           if (!establishmentName) {
-            callback('No establishment name to search during Request');
-            return;
+            return Promise.reject(new Error('No establishment name to search during Request'));
           }
 
           // We declare the results object we will return to the estasblishment file
@@ -667,26 +654,16 @@ angular.module('intia.services.establishments.api', [])
 
           const target = isAssociation ? 'rna' : 'sirene';
 
+          if (!establishmentName) {
+            return Promise.reject(new Error('No establishment name to search during Request'));
+          }
+
           // WE GET THE FIRST PAGE OF RESULTS
-          fetchEstablishments(
-            establishmentName,
-            establishmentDepartment,
-            1,
-            target,
-            (error, response) => {
-              if (!establishmentName) {
-                callback('No establishment name to search during Request');
-                return;
-              }
-
-              if (error) {
-                callback(error);
-                return;
-              }
-
+          return fetchEstablishments(establishmentName, establishmentDepartment, 1, target)
+            .catch((error) => { throw error; })
+            .then((response) => {
               if (response.tooMuchResults) {
-                callback(null, response);
-                return;
+                return response;
               }
 
               const totalPage = Math.ceil(response.resultsBeforeFiltering / PER_PAGE);
@@ -699,48 +676,25 @@ angular.module('intia.services.establishments.api', [])
               ];
 
               if (totalPage <= 1) {
-                callback(null, response);
-                return;
+                return response;
               }
 
               const pageRank = 2;
               const maxLoop = Math.min(totalPage, (MAX_RESULTS_TO_COMPUTE / PER_PAGE)) + 1;
 
-              AsyncCallsSrv.asyncFor(
-                pageRank,
-                maxLoop,
-                (index, next) => { // loopFunction
-                  fetchEstablishments(
-                    establishmentName,
-                    establishmentDepartment,
-                    index,
-                    target,
-                    (_error, _response) => {
-                      if (_error) {
-                        next(_error);
-                        return;
-                      }
+              for (let index = pageRank; index < maxLoop; index += 1) {
+                fetchEstablishments(establishmentName, establishmentDepartment, index, target)
+                  .then((_response) => {
+                    resultsToSend.resultsTable = [
+                      ...resultsToSend.resultsTable,
+                      ..._response.resultsTable,
+                    ];
+                  })
+                  .catch((_error) => { throw _error; });
+              }
 
-                      resultsToSend.resultsTable = [
-                        ...resultsToSend.resultsTable,
-                        ..._response.resultsTable,
-                      ];
-
-                      next();
-                    },
-                  );
-                },
-                (_error) => { // callback
-                  if (_error) {
-                    callback(error);
-                    return;
-                  }
-
-                  callback(null, resultsToSend);
-                },
-              );
-            },
-          );
+              return resultsToSend;
+            });
         },
       };
 
