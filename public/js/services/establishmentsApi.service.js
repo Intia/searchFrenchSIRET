@@ -566,7 +566,6 @@ angular.module('intia.services.establishments.api', [])
        * @param {string} establishmentDepartment
        * @param {number} pageRank
        * @param {string} target 'sirene' or 'rna'
-       * @param {function} callback
        * @return {Object}
        */
       const fetchEstablishments = (name, department, pageRank, target) => {
@@ -636,7 +635,6 @@ angular.module('intia.services.establishments.api', [])
          * Retrieve establishments matching a name and optionnally a department
          * @param {string} establishmentName The name of the establishment
          * @param {string} establishmentDepartment The department of the establishment (can be empty)
-         * @param {function} callback
          * @param {boolean} isAssociation true to fetch Rna's API, false to fetch sirene's API
          * @return {Object}
          */
