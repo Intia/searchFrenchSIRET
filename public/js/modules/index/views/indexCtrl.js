@@ -180,21 +180,20 @@ home.controller('IndexCtrl', [
         // Call the getEstablishments() function of the getEstablishmentsSrv service
         // Use what the stringNormalize() function of the stringFormatingSrv service returns as the establishment's name
 
-        EstablishmentSrv.getAllEstablishments($scope.view.establishments.name, $scope.view.establishments.department, (err, result) => {
-          // If there has been an error
-          if (err) {
-            $scope.view.errorMsg = err;
-            $scope.view.establishments.searchSuccess = true;
-            $scope.view.establishments.resultsTable = [];
-            return;
-          }
-
-          // If there has been no errors the data retrieved is stored
-          $scope.view.establishments.tooMuchResults = result.tooMuchResults;
-          $scope.view.establishments.resultsTable = result.resultsTable;
-          $scope.view.establishments.resultsBeforeFiltering = result.resultsBeforeFiltering;
-          $scope.view.establishments.searchSuccess = true;
-        });
+        EstablishmentSrv.getAllEstablishments($scope.view.establishments.name, $scope.view.establishments.department)
+          .then(
+            (response) => {
+              $scope.view.establishments.tooMuchResults = response.tooMuchResults;
+              $scope.view.establishments.resultsTable = response.resultsTable;
+              $scope.view.establishments.resultsBeforeFiltering = response.resultsBeforeFiltering;
+              $scope.view.establishments.searchSuccess = true;
+            },
+            (error) => {
+              $scope.view.errorMsg = error;
+              $scope.view.establishments.searchSuccess = true;
+              $scope.view.establishments.resultsTable = [];
+            },
+          );
       },
     });
   },
